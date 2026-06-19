@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F.R.I.D.A.Y — Your AI Assistant</title>
+<meta name="description" content="FRIDAY — a voice-activated AI assistant inspired by Iron Man. Free, fast, and always listening."/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:#050a12;min-height:100vh;display:flex;flex-direction:column;align-items:center;font-family:'Exo 2',sans-serif;overflow-x:hidden;position:relative;}
+
+.bg-grid{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,180,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,180,255,0.03) 1px,transparent 1px);background-size:44px 44px;}
+.bg-glow{position:fixed;width:800px;height:800px;background:radial-gradient(circle,rgba(0,140,255,0.08) 0%,transparent 68%);top:18%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;}
+
+/* NAV */
+.nav{position:relative;z-index:2;width:100%;max-width:900px;display:flex;align-items:center;justify-content:space-between;padding:22px 24px 0;}
+.nav-brand{font-family:'Orbitron',monospace;font-weight:900;letter-spacing:0.15em;font-size:0.95rem;color:#00d4ff;}
+.nav-status{display:flex;align-items:center;gap:6px;font-size:0.66rem;letter-spacing:0.1em;color:rgba(0,200,255,0.5);}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:#2ee88a;box-shadow:0 0 6px #2ee88a;}
+
+.wrap{position:relative;z-index:1;width:100%;max-width:600px;display:flex;flex-direction:column;align-items:center;padding:24px 20px 60px;}
+
+.title{font-family:'Orbitron',monospace;font-size:clamp(1.8rem,5vw,2.8rem);font-weight:900;letter-spacing:0.45em;color:#00d4ff;text-shadow:0 0 30px rgba(0,212,255,0.45);margin-bottom:5px;margin-top:18px;}
+.subtitle{font-size:0.6rem;letter-spacing:0.2em;color:rgba(0,180,255,0.38);margin-bottom:30px;text-align:center;}
+
+/* ORB */
+.orb-wrap{position:relative;width:170px;height:170px;margin-bottom:10px;cursor:pointer;flex-shrink:0;}
+.orb-ring{position:absolute;inset:-14px;border-radius:50%;border:1px solid rgba(0,212,255,0.14);animation:ring-spin 9s linear infinite;}
+.orb-ring::before{content:'';position:absolute;width:9px;height:9px;background:#00d4ff;border-radius:50%;top:50%;left:-4px;transform:translateY(-50%);box-shadow:0 0 12px #00d4ff;}
+.orb-ring2{position:absolute;inset:-26px;border-radius:50%;border:1px solid rgba(0,212,255,0.07);animation:ring-spin 14s linear infinite reverse;}
+@keyframes ring-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.orb{width:170px;height:170px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#22aaff,#0055cc 52%,#001535);position:relative;transition:transform 0.2s;box-shadow:inset 0 2px 18px rgba(255,255,255,0.13),0 0 45px rgba(0,140,255,0.28),0 0 90px rgba(0,90,255,0.12);}
+.orb:hover{transform:scale(1.03);}.orb:active{transform:scale(0.97);}
+.orb.idle{animation:idle-breathe 3s ease-in-out infinite;}
+.orb.listening{background:radial-gradient(circle at 38% 32%,#00ffff,#0099cc 52%,#002233);box-shadow:inset 0 2px 18px rgba(255,255,255,0.18),0 0 70px rgba(0,255,255,0.5),0 0 130px rgba(0,200,255,0.25);animation:listen-pulse 0.65s ease-in-out infinite;}
+.orb.speaking{background:radial-gradient(circle at 38% 32%,#ffdd88,#ff8800 52%,#1a0400);box-shadow:inset 0 2px 18px rgba(255,255,255,0.18),0 0 70px rgba(255,150,0,0.5),0 0 130px rgba(255,80,0,0.25);animation:speak-pulse 0.5s ease-in-out infinite;}
+.orb.thinking{animation:think-glow 1.6s ease-in-out infinite;}
+@keyframes idle-breathe{0%,100%{box-shadow:inset 0 2px 18px rgba(255,255,255,0.13),0 0 45px rgba(0,140,255,0.28),0 0 90px rgba(0,90,255,0.12)}50%{box-shadow:inset 0 2px 18px rgba(255,255,255,0.18),0 0 60px rgba(0,180,255,0.4),0 0 110px rgba(0,120,255,0.2)}}
+@keyframes listen-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes speak-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes think-glow{0%,100%{box-shadow:inset 0 2px 18px rgba(255,255,255,0.13),0 0 45px rgba(0,140,255,0.28),0 0 90px rgba(0,90,255,0.12)}50%{box-shadow:inset 0 2px 18px rgba(255,255,255,0.22),0 0 80px rgba(0,210,255,0.55),0 0 160px rgba(0,160,255,0.3)}}
+.orb-shine{position:absolute;width:58px;height:36px;background:radial-gradient(ellipse,rgba(255,255,255,0.32),transparent);top:17%;left:21%;border-radius:50%;transform:rotate(-28deg);pointer-events:none;}
+.orb-label{position:absolute;bottom:-34px;left:50%;transform:translateX(-50%);font-size:0.6rem;letter-spacing:0.18em;color:rgba(0,212,255,0.5);white-space:nowrap;background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.18);padding:3px 13px;border-radius:20px;}
+
+/* STATUS */
+.status-zone{display:flex;flex-direction:column;align-items:center;gap:7px;margin-top:50px;width:100%;}
+.status-row{display:flex;align-items:center;gap:7px;}
+.dot{width:6px;height:6px;border-radius:50%;background:#00d4ff;box-shadow:0 0 7px #00d4ff;animation:dot-blink 1.6s ease-in-out infinite;flex-shrink:0;}
+@keyframes dot-blink{0%,100%{opacity:1}50%{opacity:0.2}}
+#status-text{font-size:0.82rem;letter-spacing:0.1em;color:#00d4ff;}
+.vbars{display:flex;gap:3px;align-items:center;height:22px;opacity:0;transition:opacity 0.3s;}
+.vbars.active{opacity:1;}
+.vbar{width:3px;border-radius:2px;background:#00d4ff;animation:vbar-dance 0.55s ease-in-out infinite;}
+.vbar:nth-child(1){height:5px;animation-delay:0s}.vbar:nth-child(2){height:13px;animation-delay:0.08s}.vbar:nth-child(3){height:20px;animation-delay:0.16s}.vbar:nth-child(4){height:13px;animation-delay:0.24s}.vbar:nth-child(5){height:5px;animation-delay:0.32s}
+@keyframes vbar-dance{0%,100%{transform:scaleY(0.3)}50%{transform:scaleY(1)}}
+#transcript{font-size:0.78rem;color:rgba(0,190,255,0.5);font-style:italic;text-align:center;min-height:1.1em;padding:0 10px;}
+
+/* CHAT LOG */
+.chat-log{width:100%;display:flex;flex-direction:column;gap:10px;margin-top:6px;max-height:340px;overflow-y:auto;padding:4px 2px;}
+.msg{max-width:88%;padding:11px 16px;border-radius:14px;font-size:0.87rem;line-height:1.6;}
+.msg.user{align-self:flex-end;background:rgba(0,180,255,0.12);border:1px solid rgba(0,180,255,0.25);color:#cdeeff;border-bottom-right-radius:4px;}
+.msg.friday{align-self:flex-start;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(220,238,255,0.92);border-bottom-left-radius:4px;}
+
+/* ERROR */
+.err-box{width:100%;background:rgba(255,80,80,0.07);border:1px solid rgba(255,100,100,0.25);border-radius:10px;padding:12px 16px;margin-top:10px;display:none;}
+.err-box p{font-size:0.78rem;line-height:1.6;color:rgba(255,180,180,0.9);}
+
+/* CONTROLS */
+.controls{display:flex;gap:9px;margin-top:16px;flex-wrap:wrap;justify-content:center;}
+.ctrl{background:rgba(0,180,255,0.07);border:1px solid rgba(0,180,255,0.18);color:rgba(0,205,255,0.75);font-family:'Exo 2',sans-serif;font-size:0.72rem;letter-spacing:0.1em;padding:7px 16px;border-radius:20px;cursor:pointer;transition:all 0.18s;}
+.ctrl:hover{background:rgba(0,180,255,0.14);border-color:rgba(0,205,255,0.38);color:#00d4ff;}
+
+/* TYPE ROW */
+.type-row{display:flex;gap:8px;width:100%;margin-top:10px;}
+#txt{flex:1;background:rgba(0,180,255,0.045);border:1px solid rgba(0,180,255,0.18);border-radius:8px;color:#c8e8ff;font-family:'Exo 2',sans-serif;font-size:0.86rem;padding:10px 14px;outline:none;}
+#txt:focus{border-color:rgba(0,212,255,0.48);}
+#txt::placeholder{color:rgba(0,180,255,0.28);}
+#sendbtn{background:rgba(0,180,255,0.11);border:1px solid rgba(0,180,255,0.28);border-radius:8px;color:#00d4ff;font-family:'Exo 2',sans-serif;font-size:0.82rem;padding:10px 20px;cursor:pointer;transition:all 0.18s;letter-spacing:0.08em;}
+#sendbtn:hover{background:rgba(0,180,255,0.22);border-color:#00d4ff;}
+
+.hint{font-size:0.62rem;color:rgba(0,150,200,0.28);letter-spacing:0.11em;margin-top:14px;text-align:center;}
+.footer{font-size:0.6rem;color:rgba(0,150,200,0.2);letter-spacing:0.08em;margin-top:40px;text-align:center;padding-bottom:10px;}
+
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:rgba(0,180,255,0.18);border-radius:2px;}
+
+@media (max-width:480px){
+  .orb-wrap{width:140px;height:140px;}
+  .orb{width:140px;height:140px;}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<div class="nav">
+  <div class="nav-brand">F.R.I.D.A.Y</div>
+  <div class="nav-status"><div class="nav-dot"></div>SYSTEMS ONLINE</div>
+</div>
+
+<div class="wrap">
+  <div class="title">F.R.I.D.A.Y</div>
+  <div class="subtitle">FEMALE REPLACEMENT INTELLIGENT DIGITAL ASSISTANT YOUTH</div>
+
+  <div class="orb-wrap" onclick="handleOrbClick()">
+    <div class="orb-ring2"></div>
+    <div class="orb-ring"></div>
+    <div class="orb idle" id="orb"><div class="orb-shine"></div></div>
+    <div class="orb-label" id="orb-label">TAP TO SPEAK</div>
+  </div>
+
+  <div class="status-zone">
+    <div class="status-row">
+      <div class="dot"></div>
+      <div id="status-text">Booting systems...</div>
+    </div>
+    <div class="vbars" id="vbars">
+      <div class="vbar"></div><div class="vbar"></div><div class="vbar"></div>
+      <div class="vbar"></div><div class="vbar"></div>
+    </div>
+    <div id="transcript"></div>
+  </div>
+
+  <div id="err-box" class="err-box"><p id="err-text"></p></div>
+
+  <div class="chat-log" id="chat-log"></div>
+
+  <div class="controls">
+    <button class="ctrl" onclick="startListening()">🎙 SPEAK NOW</button>
+    <button class="ctrl" onclick="stopAll()">⏹ STOP</button>
+    <button class="ctrl" onclick="clearMemory()">🗑 CLEAR</button>
+  </div>
+
+  <div class="type-row">
+    <input type="text" id="txt" placeholder="Type any question and press Enter..." onkeydown="if(event.key==='Enter')sendText()"/>
+    <button id="sendbtn" onclick="sendText()">SEND</button>
+  </div>
+  <div class="hint">SAY "FRIDAY" TO WAKE · TAP ORB TO SPEAK · OR TYPE BELOW</div>
+  <div class="footer">FRIDAY AI · BUILT FOR PUBLIC USE · POWERED BY LLAMA 3.3</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  F.R.I.D.A.Y — Production Frontend
+//  Talks to your FastAPI + Groq backend
+// ═══════════════════════════════════════════════════════════════
+
+// ▼▼▼ SET THIS to your deployed backend URL (Render, etc) ▼▼▼
+const BACKEND_URL = "https://friday-ai-1-1dks.onrender.com";
+// ▲▲▲ For local testing, use: "http://localhost:8000"      ▲▲▲
+
+const orb     = document.getElementById('orb');
+const label   = document.getElementById('orb-label');
+const statusD = document.getElementById('status-text');
+const transD  = document.getElementById('transcript');
+const vbars   = document.getElementById('vbars');
+const errBox  = document.getElementById('err-box');
+const errText = document.getElementById('err-text');
+const chatLog = document.getElementById('chat-log');
+
+let voices      = [];
+let recognition = null;
+let wakeRec     = null;
+let isBusy      = false;
+let isSpeaking  = false;
+let wakeOn      = false;
+let history     = [];   // [{role:"user"|"assistant", text:"..."}]
+
+const loadV = () => { voices = window.speechSynthesis.getVoices(); };
+loadV();
+window.speechSynthesis.onvoiceschanged = loadV;
+
+function bestVoice() {
+  loadV();
+  const want = ['Google UK English Female','Microsoft Hazel','Hazel','Karen','Moira','Samantha'];
+  for (const n of want) {
+    const v = voices.find(x => x.name.includes(n));
+    if (v) return v;
+  }
+  return voices.find(x => x.lang==='en-GB') || voices.find(x => x.lang && x.lang.startsWith('en')) || voices[0] || null;
+}
+
+function setOrb(mode) {
+  orb.className = 'orb ' + (mode || 'idle');
+  const L = {idle:'TAP TO SPEAK',listening:'LISTENING...',speaking:'FRIDAY SPEAKING',thinking:'PROCESSING...'};
+  label.textContent = L[mode] || 'TAP TO SPEAK';
+  vbars.classList.toggle('active', mode==='listening' || mode==='speaking');
+}
+const setStatus = t => statusD.textContent = t;
+
+function addMsg(role, text) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role === 'user' ? 'user' : 'friday');
+  div.textContent = text;
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function showErr(msg) {
+  errBox.style.display = 'block';
+  errText.innerHTML = msg;
+  setTimeout(() => errBox.style.display = 'none', 10000);
+}
+
+function speak(text, cb) {
+  window.speechSynthesis.cancel();
+  isSpeaking = true;
+  setOrb('speaking');
+  setStatus('FRIDAY speaking...');
+
+  const parts  = text.match(/[^.!?]+[.!?]*/g) || [text];
+  const chunks = [];
+  let buf = '';
+  for (const p of parts) {
+    if ((buf + p).length > 150 && buf.trim()) { chunks.push(buf.trim()); buf = p; }
+    else buf += p;
+  }
+  if (buf.trim()) chunks.push(buf.trim());
+
+  let idx = 0;
+  function next() {
+    if (idx >= chunks.length) { isSpeaking = false; setOrb('idle'); if (cb) cb(); return; }
+    const u = new SpeechSynthesisUtterance(chunks[idx++]);
+    const v = bestVoice(); if (v) u.voice = v;
+    u.pitch = 1.06; u.rate = 0.93; u.volume = 1; u.lang = 'en-GB';
+    u.onend = next; u.onerror = next;
+    window.speechSynthesis.speak(u);
+  }
+  next();
+}
+
+function stopAll() {
+  window.speechSynthesis.cancel();
+  isSpeaking = false; isBusy = false;
+  stopWake();
+  if (recognition) { try{recognition.abort();}catch(e){} recognition = null; }
+  setOrb('idle');
+  setStatus("Ready — tap orb or say 'Friday'");
+}
+
+async function askFriday(question) {
+  if (isBusy) return;
+  isBusy = true;
+  setOrb('thinking');
+  setStatus('Processing...');
+  transD.textContent = `You: "${question}"`;
+  addMsg('user', question);
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: question, history: history })
+    });
+
+    if (!res.ok) {
+      let detail = '';
+      try { const e = await res.json(); detail = e?.detail || JSON.stringify(e); } catch(_){}
+      throw new Error(`HTTP ${res.status}: ${detail}`);
+    }
+
+    const data   = await res.json();
+    const answer = data.reply;
+    if (!answer) throw new Error('Empty response from server.');
+
+    history.push({ role: 'user', text: question });
+    history.push({ role: 'assistant', text: answer });
+    if (history.length > 20) history = history.slice(-20);
+
+    addMsg('friday', answer);
+    speak(answer, () => {
+      isBusy = false;
+      setStatus("Listening for 'Friday'...");
+      startWake();
+    });
+
+  } catch(e) {
+    console.error('FRIDAY error:', e);
+    isBusy = false;
+    setOrb('idle');
+
+    let friendly = e.message;
+    if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+      friendly = '⚠ Cannot reach the FRIDAY backend.<br><br>'
+               + '• If using Render free tier, the server sleeps after inactivity — first request takes ~30s to wake it. Try again shortly.<br>'
+               + '• Make sure BACKEND_URL in index.html matches your deployed backend exactly.';
+    } else if (e.message.includes('500')) {
+      friendly = '⚠ Server error. Check your backend logs — likely GROQ_API_KEY is missing on your host.';
+    }
+
+    addMsg('friday', '⚠ ' + e.message);
+    showErr(friendly);
+    setStatus('Error — try again');
+    setTimeout(startWake, 2000);
+  }
+}
+
+const hasSR = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+const SRCls = hasSR ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
+
+function startListening() {
+  if (!hasSR) { setStatus('No voice support — please type below.'); return; }
+  stopWake();
+  if (recognition) { try{recognition.abort();}catch(e){} recognition = null; }
+
+  recognition = new SRCls();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  setOrb('listening');
+  setStatus('Listening... ask me anything');
+
+  recognition.onresult = e => {
+    const said = e.results[0][0].transcript.trim();
+    recognition = null;
+    askFriday(said);
+  };
+
+  recognition.onerror = e => {
+    recognition = null; isBusy = false; setOrb('idle');
+    if (e.error === 'not-allowed') {
+      setStatus('Microphone blocked!');
+      showErr('⚠ <strong>Microphone blocked.</strong><br>Click the 🔒 lock icon in the address bar → Site settings → Microphone → <strong>Allow</strong> → refresh the page.');
+    } else if (e.error === 'no-speech') {
+      setStatus("No speech detected. Try again.");
+      setTimeout(startWake, 500);
+    } else {
+      setStatus("Couldn't hear clearly. Try again.");
+      setTimeout(startWake, 500);
+    }
+  };
+
+  recognition.onend = () => { if (recognition) recognition = null; };
+  try { recognition.start(); }
+  catch(e) { recognition = null; setOrb('idle'); setStatus('Mic error — refresh page.'); }
+}
+
+function startWake() {
+  if (!hasSR || wakeOn || isBusy) return;
+  wakeOn = true;
+
+  wakeRec = new SRCls();
+  wakeRec.lang = 'en-US';
+  wakeRec.continuous = true;
+  wakeRec.interimResults = true;
+  wakeRec.maxAlternatives = 1;
+
+  wakeRec.onresult = e => {
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript.toLowerCase();
+      if (t.includes('friday')) {
+        stopWake();
+        transD.textContent = '🎙 Wake word "Friday" detected!';
+        speak("Yes, Boss? I'm listening.", startListening);
+        return;
+      }
+    }
+  };
+
+  wakeRec.onend = () => { if (wakeOn) { wakeOn = false; setTimeout(() => { if (!isBusy) startWake(); }, 300); } };
+  wakeRec.onerror = e => { wakeOn = false; if (e.error !== 'not-allowed') setTimeout(() => { if (!isBusy) startWake(); }, 1000); };
+
+  try { wakeRec.start(); setStatus("Listening for 'Friday'..."); }
+  catch(e) { wakeOn = false; }
+}
+
+function stopWake() {
+  wakeOn = false;
+  if (wakeRec) { try{wakeRec.abort();}catch(e){} wakeRec = null; }
+}
+
+function handleOrbClick() {
+  if (isSpeaking) { stopAll(); return; }
+  if (isBusy) return;
+  startListening();
+}
+
+function sendText() {
+  const el = document.getElementById('txt');
+  const q  = el.value.trim();
+  if (!q || isBusy) return;
+  el.value = '';
+  stopAll();
+  askFriday(q);
+}
+
+function clearMemory() {
+  stopAll(); history = [];
+  transD.textContent = '';
+  chatLog.innerHTML = '';
+  addMsg('friday', 'Memory cleared. Ready for new session, Boss.');
+}
+
+window.addEventListener('load', () => {
+  loadV();
+  setTimeout(() => {
+    const greeting = "FRIDAY systems online. All neural networks operational. Say my name to activate, or tap the orb.";
+    addMsg('friday', greeting);
+    speak(greeting, () => {
+      isBusy = false;
+      if (hasSR) startWake();
+      else setStatus('Type your question below.');
+    });
+  }, 700);
+});
+</script>
+</body>
+</html>
